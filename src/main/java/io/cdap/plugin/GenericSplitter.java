@@ -14,7 +14,7 @@
  * the License.
  */
 
-package io.cdap.plugin.generic.splitter;
+package io.cdap.plugin;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -26,16 +26,16 @@ import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.plugin.PluginConfig;
-import io.cdap.cdap.etl.api.Emitter;
-import io.cdap.cdap.etl.api.PipelineConfigurer;
+import io.cdap.cdap.etl.api.MultiOutputEmitter;
+import io.cdap.cdap.etl.api.MultiOutputPipelineConfigurer;
 import io.cdap.cdap.etl.api.SplitterTransform;
-import io.cdap.cdap.etl.api.Transform;
 import io.cdap.cdap.etl.api.TransformContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,40 +44,37 @@ import java.util.Map;
  */
 @Plugin(type = SplitterTransform.PLUGIN_TYPE)
 @Name("GenericSplitter") // <- NOTE: The name of the plugin should match the name of the docs and widget json files.
-@Description("This is an example transform.")
-public class ExampleTransformPlugin extends Transform<StructuredRecord, StructuredRecord> {
-  private static final Logger LOG = LoggerFactory.getLogger(ExampleTransformPlugin.class);
+@Description("This is an generic splitter transform, which sends a record to an appropriate branch based on the " +
+  "evaluation of a simple function on the value of one of its fields.")
+public class GenericSplitter extends SplitterTransform<StructuredRecord, StructuredRecord> {
+  private static final Logger LOG = LoggerFactory.getLogger(GenericSplitter.class);
   private static final Gson GSON = new Gson();
   private static final Type MAP_STRING_STRING_TYPE =  new TypeToken<Map<String, String>>() {}.getType();
 
   // Usually, you will need a private variable to store the config that was passed to your class
   private final Config config;
-  private Schema outputSchema;
 
-  public ExampleTransformPlugin(Config config) {
+  public GenericSplitter(Config config) {
     this.config = config;
   }
 
-  /**
-   * This function is called when the pipeline is published. You should use this for validating the config and setting
-   * additional parameters in pipelineConfigurer.getStageConfigurer(). Those parameters will be stored and will be made
-   * available to your plugin during runtime via the TransformContext. Any errors thrown here will stop the pipeline
-   * from being published.
-   * @param pipelineConfigurer Configures an ETL Pipeline. Allows adding datasets and streams and storing parameters
-   * @throws IllegalArgumentException If the config is invalid.
-   */
   @Override
-  public void configurePipeline(PipelineConfigurer pipelineConfigurer) throws IllegalArgumentException {
-    super.configurePipeline(pipelineConfigurer);
-    // It's usually a good idea to validate the configuration at this point. It will stop the pipeline from being
-    // published if this throws an error.
-    Schema inputSchema = pipelineConfigurer.getStageConfigurer().getInputSchema();
+  public void configurePipeline(MultiOutputPipelineConfigurer configurer) {
+    super.configurePipeline(configurer);
+    Schema inputSchema = configurer.getMultiOutputStageConfigurer().getInputSchema();
     config.validate(inputSchema);
-    try {
-      pipelineConfigurer.getStageConfigurer().setOutputSchema(Schema.parseJson(config.schema));
-    } catch (IOException e) {
-      throw new IllegalArgumentException("Output schema cannot be parsed.", e);
+    Map<String, Schema> schemas = generateSchemas(inputSchema);
+    configurer.getMultiOutputStageConfigurer().setOutputSchemas(schemas);
+  }
+
+  private Map<String, Schema> generateSchemas(Schema inputSchema) {
+    Map<String, String> splitRules = GSON.fromJson(config.splitRules, MAP_STRING_STRING_TYPE);
+    Map<String, Schema> schemas = new HashMap<>();
+    for (String portName : splitRules.keySet()) {
+      schemas.put(portName, inputSchema);
     }
+
+    return schemas;
   }
 
   /**
@@ -89,33 +86,6 @@ public class ExampleTransformPlugin extends Transform<StructuredRecord, Structur
   @Override
   public void initialize(TransformContext context) throws Exception {
     super.initialize(context);
-    outputSchema = Schema.parseJson(config.schema);
-  }
-
-  /**
-   * This is the method that is called for every record in the pipeline and allows you to make any transformations
-   * you need and emit one or more records to the next stage.
-   * @param input The record that is coming into the plugin
-   * @param emitter An emitter allowing you to emit one or more records to the next stage
-   * @throws Exception
-   */
-  @Override
-  public void transform(StructuredRecord input, Emitter<StructuredRecord> emitter) throws Exception {
-    // Get all the fields that are in the output schema
-    List<Schema.Field> fields = outputSchema.getFields();
-    // Create a builder for creating the output record
-    StructuredRecord.Builder builder = StructuredRecord.builder(outputSchema);
-    // Add all the values to the builder
-    for (Schema.Field field : fields) {
-      String name = field.getName();
-      if (input.get(name) != null) {
-        builder.set(name, input.get(name));
-      }
-    }
-    // If you wanted to make additional changes to the output record, this might be a good place to do it.
-
-    // Finally, build and emit the record.
-    emitter.emit(builder.build());
   }
 
   /**
@@ -124,6 +94,12 @@ public class ExampleTransformPlugin extends Transform<StructuredRecord, Structur
   @Override
   public void destroy() {
     // No Op
+  }
+
+  @Override
+  public void transform(StructuredRecord input, MultiOutputEmitter<StructuredRecord> emitter) throws Exception {
+    Object value = input.get(config.fieldToSplit);
+
   }
 
   /**
@@ -141,29 +117,26 @@ public class ExampleTransformPlugin extends Transform<StructuredRecord, Structur
     @Macro
     private final String splitRules;
 
-    @Name("schema")
-    @Description("")
-    private final String schema;
-
-    public Config(String fieldToSplit, String splitRules, String schema) {
+    public Config(String fieldToSplit, String splitRules) {
       this.fieldToSplit = fieldToSplit;
       this.splitRules = splitRules;
-      this.schema = schema;
     }
 
     private void validate(Schema inputSchema) throws IllegalArgumentException {
-      Schema parsedSchema;
-      try {
-        parsedSchema = Schema.parseJson(inputSchema);
-      } catch (IOException e) {
-        throw new IllegalArgumentException("Output schema cannot be parsed.", e);
-      }
       if (fieldToSplit == null || fieldToSplit.isEmpty()) {
         throw new IllegalArgumentException("Field to split on is required.");
       }
-      if (parsedSchema.getField(fieldToSplit) == null) {
+      Schema.Field field = inputSchema.getField(fieldToSplit);
+      if (field == null) {
         throw new IllegalArgumentException("Field to split on must be present in the input schema");
       }
+      Schema fieldSchema = field.getSchema();
+      if (!fieldSchema.isSimpleOrNullableSimple()) {
+        throw new IllegalArgumentException(
+          String.format("Field to split must be a simple type - STRING, INTEGER, FLOAT, LONG, DOUBLE, BOOLEAN. " +
+                          "Found '%s'", fieldSchema));
+      }
+      Schema.Type nonNullableType = fieldSchema.getNonNullable().getType();
       if (splitRules == null || splitRules.isEmpty()) {
         throw new IllegalArgumentException("At least 1 rule to split data must be specified.");
       }

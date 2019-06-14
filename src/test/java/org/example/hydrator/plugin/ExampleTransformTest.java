@@ -19,7 +19,7 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.Transform;
 import io.cdap.cdap.etl.mock.common.MockEmitter;
-import io.cdap.plugin.generic.splitter.ExampleTransformPlugin;
+import io.cdap.plugin.GenericSplitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,8 +35,8 @@ public class ExampleTransformTest {
                                                       Schema.Field.of("e", Schema.of(Schema.Type.STRING)));
   @Test
   public void testMyTransform() throws Exception {
-    ExampleTransformPlugin.Config config = new ExampleTransformPlugin.Config("SomeValue", null, INPUT.toString());
-    Transform<StructuredRecord, StructuredRecord> transform = new ExampleTransformPlugin(config);
+    GenericSplitter.Config config = new GenericSplitter.Config("SomeValue", null, INPUT.toString());
+    Transform<StructuredRecord, StructuredRecord> transform = new GenericSplitter(config);
     transform.initialize(null);
 
     MockEmitter<StructuredRecord> emitter = new MockEmitter<>();
