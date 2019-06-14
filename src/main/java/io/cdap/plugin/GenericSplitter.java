@@ -34,10 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  *
@@ -68,12 +69,12 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
   }
 
   private Map<String, Schema> generateSchemas(Schema inputSchema) {
-    Map<String, String> splitRules = GSON.fromJson(config.splitRules, MAP_STRING_STRING_TYPE);
+    Map<String, String> splitRules = GSON.fromJson(config.portConfig, MAP_STRING_STRING_TYPE);
     Map<String, Schema> schemas = new HashMap<>();
     for (String portName : splitRules.keySet()) {
       schemas.put(portName, inputSchema);
     }
-
+    schemas.put(config.nullPort, inputSchema);
     return schemas;
   }
 
@@ -97,8 +98,14 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
   }
 
   @Override
-  public void transform(StructuredRecord input, MultiOutputEmitter<StructuredRecord> emitter) throws Exception {
-    Object value = input.get(config.fieldToSplit);
+  public void transform(StructuredRecord input, MultiOutputEmitter<StructuredRecord> emitter) {
+    Object value = input.get(config.fieldToSplitOn);
+    if (value == null) {
+      LOG.trace("Found null value for {}. Emitting to {} port.", config.fieldToSplitOn, config.nullPort);
+      emitter.emit(config.nullPort, input);
+      return;
+    }
+    String textValue = String.valueOf(value);
 
   }
 
@@ -107,46 +114,63 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
    * plugin.
    */
   public static class Config extends PluginConfig {
-    @Name("fieldToSplit")
-    @Description("Specifies the field to split on")
-    @Macro // <- Macro means that the value will be substituted at runtime by the user.
-    private final String fieldToSplit;
+    private static final List<Schema.Type> ALLOWED_TYPES = new ArrayList<>();
+    static {
+      ALLOWED_TYPES.add(Schema.Type.STRING);
+      ALLOWED_TYPES.add(Schema.Type.INT);
+      ALLOWED_TYPES.add(Schema.Type.LONG);
+      ALLOWED_TYPES.add(Schema.Type.FLOAT);
+      ALLOWED_TYPES.add(Schema.Type.DOUBLE);
+      ALLOWED_TYPES.add(Schema.Type.BOOLEAN);
+    }
 
-    @Name("splitRules")
+    @Name("fieldToSplitOn")
+    @Description("Specifies the field to split on")
+    @Macro
+    private final String fieldToSplitOn;
+
+    @Name("nullPort")
+    @Description("Determines the port name where records that contain a null value for the field to split on " +
+      "are sent. Defaults to Null.")
+    @Nullable
+    private final String nullPort;
+
+    @Name("portConfig")
     @Description("Specifies the rules to split the data as a json map")
     @Macro
-    private final String splitRules;
+    private final String portConfig;
 
-    public Config(String fieldToSplit, String splitRules) {
-      this.fieldToSplit = fieldToSplit;
-      this.splitRules = splitRules;
+    public Config(String fieldToSplitOn, @Nullable String nullPort, String portConfig) {
+      this.fieldToSplitOn = fieldToSplitOn;
+      this.nullPort = nullPort == null ? "Null" : nullPort;
+      this.portConfig = portConfig;
     }
 
     private void validate(Schema inputSchema) throws IllegalArgumentException {
-      if (fieldToSplit == null || fieldToSplit.isEmpty()) {
+      if (fieldToSplitOn == null || fieldToSplitOn.isEmpty()) {
         throw new IllegalArgumentException("Field to split on is required.");
       }
-      Schema.Field field = inputSchema.getField(fieldToSplit);
+      Schema.Field field = inputSchema.getField(fieldToSplitOn);
       if (field == null) {
         throw new IllegalArgumentException("Field to split on must be present in the input schema");
       }
       Schema fieldSchema = field.getSchema();
-      if (!fieldSchema.isSimpleOrNullableSimple()) {
+      Schema.Type nonNullableType = fieldSchema.getNonNullable().getType();
+      if (!ALLOWED_TYPES.contains(nonNullableType)) {
         throw new IllegalArgumentException(
-          String.format("Field to split must be a simple type - STRING, INTEGER, FLOAT, LONG, DOUBLE, BOOLEAN. " +
+          String.format("Field to split must be one of - STRING, INTEGER, LONG, FLOAT, DOUBLE, BOOLEAN. " +
                           "Found '%s'", fieldSchema));
       }
-      Schema.Type nonNullableType = fieldSchema.getNonNullable().getType();
-      if (splitRules == null || splitRules.isEmpty()) {
-        throw new IllegalArgumentException("At least 1 rule to split data must be specified.");
+      if (portConfig == null || portConfig.isEmpty()) {
+        throw new IllegalArgumentException("At least 1 port config must be specified.");
       }
-      Map<String, String> rules;
+      Map<String, String> portConfig;
       try {
-        rules = GSON.fromJson(splitRules, MAP_STRING_STRING_TYPE);
+        portConfig = GSON.fromJson(this.portConfig, MAP_STRING_STRING_TYPE);
       } catch(JsonSyntaxException ex) {
         throw new IllegalArgumentException("Split rules must be a valid JSON");
       }
-      validateRules(rules);
+      validateRules(portConfig);
     }
 
     private void validateRules(Map<String, String> rules) {
