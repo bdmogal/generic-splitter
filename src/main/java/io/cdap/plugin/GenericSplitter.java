@@ -1,5 +1,5 @@
 /*
- * Copyright © 2017 Cask Data, Inc.
+ * Copyright © 2019 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -16,6 +16,8 @@
 
 package io.cdap.plugin;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
@@ -36,8 +38,10 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -52,8 +56,8 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
   private static final Gson GSON = new Gson();
   private static final Type MAP_STRING_STRING_TYPE =  new TypeToken<Map<String, String>>() {}.getType();
 
-  // Usually, you will need a private variable to store the config that was passed to your class
   private final Config config;
+  private List<PortConfig> portConfigs;
 
   public GenericSplitter(Config config) {
     this.config = config;
@@ -87,6 +91,7 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
   @Override
   public void initialize(TransformContext context) throws Exception {
     super.initialize(context);
+    portConfigs = config.getPortConfigs();
   }
 
   /**
@@ -106,14 +111,20 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
       return;
     }
     String textValue = String.valueOf(value);
-
+    for (PortConfig portConfig : portConfigs) {
+      String portName = portConfig.getName();
+      Function function = portConfig.getFunction();
+      if (function.evaluate(textValue)) {
+        emitter.emit(portName, input);
+      }
+    }
   }
 
   /**
    * Your plugin's configuration class. The fields here will correspond to the fields in the UI for configuring the
    * plugin.
    */
-  public static class Config extends PluginConfig {
+  static class Config extends PluginConfig {
     private static final List<Schema.Type> ALLOWED_TYPES = new ArrayList<>();
     static {
       ALLOWED_TYPES.add(Schema.Type.STRING);
@@ -140,7 +151,7 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
     @Macro
     private final String portConfig;
 
-    public Config(String fieldToSplitOn, @Nullable String nullPort, String portConfig) {
+    Config(String fieldToSplitOn, @Nullable String nullPort, String portConfig) {
       this.fieldToSplitOn = fieldToSplitOn;
       this.nullPort = nullPort == null ? "Null" : nullPort;
       this.portConfig = portConfig;
@@ -175,6 +186,69 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
 
     private void validateRules(Map<String, String> rules) {
 
+    }
+
+    List<PortConfig> getPortConfigs() {
+      List<PortConfig> portConfigs = new ArrayList<>();
+      if (containsMacro("portConfig")) {
+        return portConfigs;
+      }
+      Set<String> portNames = new HashSet<>();
+      for (String singlePortConfig : Splitter.on(',').trimResults().split(portConfig)) {
+        int colonIdx = singlePortConfig.indexOf(':');
+        if (colonIdx < 0) {
+          throw new IllegalArgumentException(String.format(
+            "Could not find ':' separating port name from its selection operation in '%s'.", singlePortConfig));
+        }
+        String name = singlePortConfig.substring(0, colonIdx).trim();
+        if (!portNames.add(name)) {
+          throw new IllegalArgumentException(String.format(
+            "Cannot create multiple ports with the same name '%s'.", name));
+        }
+
+        String functionAndParameter = singlePortConfig.substring(colonIdx + 1).trim();
+        int leftParanIdx = functionAndParameter.indexOf('(');
+        if (leftParanIdx < 0) {
+          throw new IllegalArgumentException(String.format(
+            "Could not find '(' in function '%s'. Operations must be specified as function(parameter).",
+            functionAndParameter));
+        }
+        String functionStr = functionAndParameter.substring(0, leftParanIdx).trim();
+        FunctionType function;
+        try {
+          function = FunctionType.valueOf(functionStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+          throw new IllegalArgumentException(String.format(
+            "Invalid function '%s'. Must be one of %s.", functionStr, Joiner.on(',').join(FunctionType.values())));
+        }
+
+        if (!functionAndParameter.endsWith(")")) {
+          throw new IllegalArgumentException(String.format(
+            "Could not find closing ')' in function '%s'. Functions must be specified as function(parameter).",
+            functionAndParameter));
+        }
+        String parameter = functionAndParameter.substring(leftParanIdx + 1, functionAndParameter.length() - 1).trim();
+        if (parameter.isEmpty()) {
+          throw new IllegalArgumentException(String.format(
+            "Invalid function '%s'. A parameter must be given as an argument.", functionAndParameter));
+        }
+
+        portConfigs.add(new PortConfig(name, function, parameter));
+      }
+
+      if (portConfigs.isEmpty()) {
+        throw new IllegalArgumentException("The 'portConfigs' property must be set.");
+      }
+      return portConfigs;
+    }
+
+    enum FunctionType {
+      EQUALS,
+      NOT_EQUALS,
+      CONTAINS,
+      NOT_CONTAINS,
+      IN,
+      NOT_IN
     }
   }
 }
