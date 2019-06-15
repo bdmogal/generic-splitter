@@ -59,7 +59,7 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
   private final Config config;
   private List<PortConfig> portConfigs;
 
-  public GenericSplitter(Config config) {
+  GenericSplitter(Config config) {
     this.config = config;
   }
 

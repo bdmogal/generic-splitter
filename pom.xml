@@ -33,7 +33,7 @@
          the CDAP version, but not always. -->
     <etl.versionRange>[6.0.0,10.0.0-SNAPSHOT)</etl.versionRange>
     <!-- This is the list of packages where your code exists. You can add multiple and separated with a ; or use wildcards *. -->
-    <exported-packages>io.cdap.plugin*</exported-packages>
+    <exported-packages>io.cdap.plugin.*</exported-packages>
   </properties>
 
   <repositories>

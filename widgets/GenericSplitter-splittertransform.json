@@ -39,7 +39,7 @@
             "widget": "outputSchema",
             "output-property": "schema",
             "plugin-method": "outputSchema",
-            "required-fields": ["groupByFields", "aggregates"],
+            "required-fields": ["portConfig"],
             "missing-required-fields-message": "'Group By Fields' & 'Aggregates' properties are required to fetch schema."
           }
         },
