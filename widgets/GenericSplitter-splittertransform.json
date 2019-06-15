@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "spec-version": "1.5",
+    "label": "Generic Splitter"
+  },
+  "display-name" : "Generic Splitter",
+  "configuration-groups": [
+    {
+      "label": "Basic",
+      "properties": [
+        {
+          "widget-type": "input-field-selector",
+          "label": "Field to split on",
+          "name": "fieldToSplitOn",
+          "widget-attributes": {
+
+          }
+        },
+        {
+          "widget-type": "function-dropdown-with-alias",
+          "label": "Port Specification",
+          "name": "portConfig",
+          "widget-attributes": {
+            "placeholders": {
+              "field": "Value",
+              "alias": "Port name"
+            },
+            "dropdownOptions": [
+              "Equals",
+              "Not Equals",
+              "Contains",
+              "Not Contains",
+              "In",
+              "Not In"
+            ]
+          },
+          "plugin-function": {
+            "method": "POST",
+            "widget": "outputSchema",
+            "output-property": "schema",
+            "plugin-method": "outputSchema",
+            "required-fields": ["groupByFields", "aggregates"],
+            "missing-required-fields-message": "'Group By Fields' & 'Aggregates' properties are required to fetch schema."
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Null Port Name",
+          "name": "nullPort"
+        }
+      ]
+    }
+  ],
+  "outputs": []
+}
