@@ -18,9 +18,6 @@ package io.cdap.plugin;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
@@ -35,7 +32,6 @@ import io.cdap.cdap.etl.api.TransformContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,8 +49,6 @@ import javax.annotation.Nullable;
   "evaluation of a simple function on the value of one of its fields.")
 public class GenericSplitter extends SplitterTransform<StructuredRecord, StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(GenericSplitter.class);
-  private static final Gson GSON = new Gson();
-  private static final Type MAP_STRING_STRING_TYPE =  new TypeToken<Map<String, String>>() {}.getType();
 
   private final Config config;
   private List<PortConfig> portConfigs;
@@ -73,10 +67,10 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
   }
 
   private Map<String, Schema> generateSchemas(Schema inputSchema) {
-    Map<String, String> splitRules = GSON.fromJson(config.portConfig, MAP_STRING_STRING_TYPE);
     Map<String, Schema> schemas = new HashMap<>();
-    for (String portName : splitRules.keySet()) {
-      schemas.put(portName, inputSchema);
+    portConfigs = config.getPortConfigs();
+    for (PortConfig portConfig : portConfigs) {
+      schemas.put(portConfig.getName(), inputSchema);
     }
     schemas.put(config.nullPort, inputSchema);
     return schemas;
@@ -166,8 +160,8 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
         throw new IllegalArgumentException("Field to split on must be present in the input schema");
       }
       Schema fieldSchema = field.getSchema();
-      Schema.Type nonNullableType = fieldSchema.getNonNullable().getType();
-      if (!ALLOWED_TYPES.contains(nonNullableType)) {
+      Schema.Type type = fieldSchema.isNullable() ? fieldSchema.getNonNullable().getType() : fieldSchema.getType();
+      if (!ALLOWED_TYPES.contains(type)) {
         throw new IllegalArgumentException(
           String.format("Field to split must be one of - STRING, INTEGER, LONG, FLOAT, DOUBLE, BOOLEAN. " +
                           "Found '%s'", fieldSchema));
@@ -175,16 +169,10 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
       if (portConfig == null || portConfig.isEmpty()) {
         throw new IllegalArgumentException("At least 1 port config must be specified.");
       }
-      Map<String, String> portConfig;
-      try {
-        portConfig = GSON.fromJson(this.portConfig, MAP_STRING_STRING_TYPE);
-      } catch(JsonSyntaxException ex) {
-        throw new IllegalArgumentException("Split rules must be a valid JSON");
-      }
-      validateRules(portConfig);
+      validatePortConfig(portConfig);
     }
 
-    private void validateRules(Map<String, String> rules) {
+    private void validatePortConfig(String portConfig) {
 
     }
 
