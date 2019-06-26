@@ -17,5 +17,5 @@
 package io.cdap.plugin;
 
 public interface Function {
-  boolean evaluate(String fieldValue);
+  boolean evaluate(String actualValue, String compareValue);
 }

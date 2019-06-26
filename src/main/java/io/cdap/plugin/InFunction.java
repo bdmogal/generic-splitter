@@ -19,17 +19,11 @@ package io.cdap.plugin;
 import java.util.Arrays;
 import java.util.List;
 
-public class InFunction extends AbstractPortFunction {
-
-  private final List<String> possibleValues;
-
-  protected InFunction(String parameter) {
-    super(parameter);
-    possibleValues = Arrays.asList(parameter.split("|"));
-  }
+public class InFunction implements Function {
 
   @Override
-  public boolean evaluate(String fieldValue) {
-    return possibleValues.contains(fieldValue);
+  public boolean evaluate(String actualValue, String compareValue) {
+    List<String> possibleValues = Arrays.asList(compareValue.split("|"));
+    return possibleValues.contains(actualValue);
   }
 }
