@@ -1,9 +1,8 @@
 {
   "metadata": {
-    "spec-version": "1.5",
-    "label": "Generic Splitter"
+    "spec-version": "1.5"
   },
-  "display-name" : "Generic Splitter",
+  "display-name" : "Record Router",
   "configuration-groups": [
     {
       "label": "Basic",
@@ -19,7 +18,7 @@
         {
           "widget-type": "function-dropdown-with-alias",
           "label": "Port Specification",
-          "name": "portConfig",
+          "name": "portSpecification",
           "widget-attributes": {
             "placeholders": {
               "field": "Value",
@@ -39,8 +38,8 @@
             "widget": "outputSchema",
             "output-property": "schema",
             "plugin-method": "outputSchema",
-            "required-fields": ["portConfig"],
-            "missing-required-fields-message": "'Group By Fields' & 'Aggregates' properties are required to fetch schema."
+            "required-fields": ["portSpecification"],
+            "missing-required-fields-message": "'Port Specification' is required to fetch schema."
           }
         },
         {
@@ -49,7 +48,31 @@
           "name": "nullPort"
         }
       ]
+    },
+    {
+      "label": "Advanced",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Mismatch handling",
+          "name": "mismatchHandling",
+          "widget-attributes": {
+            "values": [
+              "Skip",
+              "Send to error port",
+              "Send to mismatch port"
+            ],
+            "default": "Skip"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Mismatch Port",
+          "name": "mismatchPort"
+        }
+      ]
     }
   ],
+  "emit-errors": true,
   "outputs": []
 }

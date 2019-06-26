@@ -16,14 +16,10 @@
 
 package io.cdap.plugin;
 
-public class ContainsFunction extends AbstractPortFunction {
-
-  protected ContainsFunction(String parameter) {
-    super(parameter);
-  }
+public class ContainsFunction implements Function {
 
   @Override
-  public boolean evaluate(String fieldValue) {
-    return parameter.contains(fieldValue);
+  public boolean evaluate(String actualValue, String compareValue) {
+    return compareValue.contains(actualValue);
   }
 }

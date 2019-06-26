@@ -16,15 +16,15 @@
 
 package io.cdap.plugin;
 
-class PortConfig {
+class PortSpecification {
   private final String name;
   private final Function function;
   private final String parameter;
 
-  PortConfig(String name, GenericSplitter.Config.FunctionType functionType, String operand) {
+  PortSpecification(String name, GenericSplitter.Config.FunctionType functionType, String parameter) {
     this.name = name;
     this.function = fromFunctionType(functionType);
-    this.parameter = operand;
+    this.parameter = parameter;
   }
 
   String getName() {
@@ -35,30 +35,43 @@ class PortConfig {
     return function;
   }
 
+  String getParameter() {
+    return parameter;
+  }
+
   private Function fromFunctionType(GenericSplitter.Config.FunctionType functionType) {
     Function function;
     switch (functionType) {
       case EQUALS:
-        function = new EqualsFunction(parameter);
+        function = new EqualsFunction();
         break;
       case NOT_EQUALS:
-        function = new NotEqualsFunction(parameter);
+        function = new NotEqualsFunction();
         break;
       case CONTAINS:
-        function = new ContainsFunction(parameter);
+        function = new ContainsFunction();
         break;
       case NOT_CONTAINS:
-        function = new EqualsFunction(parameter);
+        function = new NotContainsFunction();
         break;
       case IN:
-        function = new EqualsFunction(parameter);
+        function = new InFunction();
         break;
       case NOT_IN:
-        function = new EqualsFunction(parameter);
+        function = new NotInFunction();
         break;
       default:
         throw new IllegalArgumentException("Unknown function " + functionType);
     }
     return function;
+  }
+
+  @Override
+  public String toString() {
+    return "PortSpecification{" +
+      "name='" + name + '\'' +
+      ", function=" + function +
+      ", parameter='" + parameter + '\'' +
+      '}';
   }
 }

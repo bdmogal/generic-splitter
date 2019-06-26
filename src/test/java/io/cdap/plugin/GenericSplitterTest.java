@@ -18,10 +18,7 @@ package io.cdap.plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.SplitterTransform;
-import io.cdap.cdap.etl.api.Transform;
-import io.cdap.cdap.etl.mock.common.MockEmitter;
 import io.cdap.cdap.etl.mock.common.MockMultiOutputEmitter;
-import io.cdap.plugin.GenericSplitter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,17 +34,32 @@ public class GenericSplitterTest {
                     Schema.Field.of("b", Schema.of(Schema.Type.STRING)),
                     Schema.Field.of("c", Schema.of(Schema.Type.STRING)));
   @Test
-  public void testNullSplitFieldDefaultPort() throws Exception {
-    testNullSplitField(null);
+  public void testMismatchedRecordToError() throws Exception {
+    testMismatchedRecord("error", null);
   }
 
   @Test
-  public void testNullSplitFieldCustomPort() throws Exception {
-    testNullSplitField("nullPort");
+  public void testMismatchedRecordToDefaultMismatchPort() throws Exception {
+    testMismatchedRecordToMismatchPort(null);
   }
 
-  private void testNullSplitField(@Nullable String nullPortName) throws Exception {
-    GenericSplitter.Config config = new GenericSplitter.Config("splitField", nullPortName, INPUT.toString());
+  @Test
+  public void testMismatchedRecordToMismatchPort() throws Exception {
+    testMismatchedRecordToMismatchPort("mismatch");
+  }
+
+  @Test
+  public void testMismatchedRecordSkipped() throws Exception {
+    testMismatchedRecord("skip", null);
+  }
+
+  private void testMismatchedRecordToMismatchPort(@Nullable String mismatchPortName) throws Exception {
+    testMismatchedRecord("mismatch_port", mismatchPortName);
+  }
+
+  private void testMismatchedRecord(String mismatchHandling, @Nullable String mismatchPortName) throws Exception {
+    GenericSplitter.Config config = new GenericSplitter.Config("splitField",  INPUT.toString(),
+                                                               mismatchHandling, mismatchPortName);
     SplitterTransform<StructuredRecord, StructuredRecord> transform = new GenericSplitter(config);
     transform.initialize(null);
 
@@ -56,8 +68,8 @@ public class GenericSplitterTest {
                           .set("splitField", null)
                           .set("b", "2")
                           .set("c", "3").build(), emitter);
-    nullPortName = nullPortName == null ? "Null" : nullPortName;
-    StructuredRecord record = (StructuredRecord) emitter.getEmitted().get(nullPortName).get(0);
+    mismatchPortName = mismatchPortName == null ? "Other" : mismatchPortName;
+    StructuredRecord record = (StructuredRecord) emitter.getEmitted().get(mismatchPortName).get(0);
     Assert.assertNull(record.get("splitField"));
     Assert.assertEquals("2", record.get("b"));
     Assert.assertEquals("3", record.get("c"));

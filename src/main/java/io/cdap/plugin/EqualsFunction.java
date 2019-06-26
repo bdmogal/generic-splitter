@@ -16,14 +16,10 @@
 
 package io.cdap.plugin;
 
-public class EqualsFunction extends AbstractPortFunction {
-
-  protected EqualsFunction(String parameter) {
-    super(parameter);
-  }
+public class EqualsFunction implements Function {
 
   @Override
-  public boolean evaluate(String fieldValue) {
-    return parameter.equals(fieldValue);
+  public boolean evaluate(String actualValue, String compareValue) {
+    return compareValue.equals(actualValue);
   }
 }
