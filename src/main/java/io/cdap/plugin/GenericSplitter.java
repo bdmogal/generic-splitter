@@ -44,7 +44,7 @@ import javax.annotation.Nullable;
  *
  */
 @Plugin(type = SplitterTransform.PLUGIN_TYPE)
-@Name("GenericSplitter") // <- NOTE: The name of the plugin should match the name of the docs and widget json files.
+@Name("GenericSplitter")
 @Description("This is an generic splitter transform, which sends a record to an appropriate branch based on the " +
   "evaluation of a simple function on the value of one of its fields.")
 public class GenericSplitter extends SplitterTransform<StructuredRecord, StructuredRecord> {
@@ -73,6 +73,7 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
       schemas.put(portConfig.getName(), inputSchema);
     }
     schemas.put(config.nullPort, inputSchema);
+    schemas.put(config.defaultPort, inputSchema);
     return schemas;
   }
 
@@ -105,12 +106,20 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
       return;
     }
     String textValue = String.valueOf(value);
+    boolean emitted = false;
     for (PortConfig portConfig : portConfigs) {
       String portName = portConfig.getName();
       Function function = portConfig.getFunction();
       if (function.evaluate(textValue)) {
         emitter.emit(portName, input);
+        emitted = true;
+        break;
       }
+    }
+    if (!emitted) {
+      LOG.trace("Value {} for {} does not match any port conditions. Emitting it to the default port {}",
+                textValue, config.fieldToSplitOn, config.defaultPort);
+      emitter.emit(config.defaultPort, input);
     }
   }
 
@@ -134,21 +143,30 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
     @Macro
     private final String fieldToSplitOn;
 
-    @Name("nullPort")
-    @Description("Determines the port name where records that contain a null value for the field to split on " +
-      "are sent. Defaults to Null.")
-    @Nullable
-    private final String nullPort;
-
     @Name("portConfig")
     @Description("Specifies the rules to split the data as a json map")
     @Macro
     private final String portConfig;
 
-    Config(String fieldToSplitOn, @Nullable String nullPort, String portConfig) {
+    @Name("nullPort")
+    @Description("Determines the port name where records that contain a null value for the field to split on " +
+      "are sent. Defaults to Null.")
+    @Nullable
+    @Macro
+    private final String nullPort;
+
+    @Name("defaultPort")
+    @Description("Determines the port name where records that do not match any of the specified conditions in the " +
+      "port specification are sent. Defaults to 'Default'")
+    @Nullable
+    @Macro
+    private final String defaultPort;
+
+    Config(String fieldToSplitOn, String portConfig, @Nullable String nullPort, @Nullable String defaultPort) {
       this.fieldToSplitOn = fieldToSplitOn;
       this.nullPort = nullPort == null ? "Null" : nullPort;
       this.portConfig = portConfig;
+      this.defaultPort = defaultPort == null ? "Default" : defaultPort;
     }
 
     private void validate(Schema inputSchema) throws IllegalArgumentException {

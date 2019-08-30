@@ -47,6 +47,11 @@
           "widget-type": "textbox",
           "label": "Null Port Name",
           "name": "nullPort"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Default Port Name",
+          "name": "defaultPort"
         }
       ]
     }
