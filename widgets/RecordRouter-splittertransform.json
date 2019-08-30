@@ -41,11 +41,6 @@
             "required-fields": ["portSpecification"],
             "missing-required-fields-message": "'Port Specification' is required to fetch schema."
           }
-        },
-        {
-          "widget-type": "textbox",
-          "label": "Null Port Name",
-          "name": "nullPort"
         }
       ]
     },
@@ -60,9 +55,9 @@
             "values": [
               "Skip",
               "Send to error port",
-              "Send to mismatch port"
+              "Send to default port"
             ],
-            "default": "Skip"
+            "default": "Send to default port"
           }
         },
         {
@@ -78,9 +73,9 @@
             "values": [
               "Skip",
               "Send to error port",
-              "Send to mismatch port"
+              "Send to null port"
             ],
-            "default": "Skip"
+            "default": "Send to null port"
           }
         },
         {
