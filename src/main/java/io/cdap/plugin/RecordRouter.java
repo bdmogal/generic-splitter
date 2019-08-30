@@ -50,8 +50,8 @@ import javax.annotation.Nullable;
  */
 @Plugin(type = SplitterTransform.PLUGIN_TYPE)
 @Name("RecordRouter")
-@Description("This is an generic splitter transform, which sends a record to an appropriate branch based on the " +
-  "evaluation of a simple function on the value of one of its fields.")
+@Description("Routes a record to an appropriate port based on the evaluation of a simple function on the value of " +
+  "one of its fields.")
 public class RecordRouter extends SplitterTransform<StructuredRecord, StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(RecordRouter.class);
 
@@ -173,8 +173,8 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
     static final String DEFAULT_NULL_PORT_NAME = "Null";
 
     @Name("routingField")
-    @Description("Specifies the field on which the port specification rules should be applied, to determine the " +
-      "port where the record should be routed to.")
+    @Description("Specifies the field in the input schema on which the rules in the _Port Specification_ should be " +
+      "applied, to determine the port where the record should be routed to.")
     @Macro
     private final String routingField;
 

@@ -9,8 +9,8 @@
       "properties": [
         {
           "widget-type": "input-field-selector",
-          "label": "Field to split on",
-          "name": "fieldToSplitOn",
+          "label": "Routing field",
+          "name": "routingField",
           "widget-attributes": {
 
           }
