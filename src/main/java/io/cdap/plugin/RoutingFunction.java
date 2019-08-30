@@ -16,10 +16,16 @@
 
 package io.cdap.plugin;
 
-public class EqualsFunction implements Function {
-
-  @Override
-  public boolean evaluate(String actualValue, String compareValue) {
-    return compareValue.equals(actualValue);
-  }
+/**
+ * Defines the contract for a routing function, which decides  which port to route a record to
+ */
+public interface RoutingFunction {
+  /**
+   * Evaluates teh value of a field against an expected value, based on a specified routing function
+   *
+   * @param actualValue the value to evaluate
+   * @param compareValue the value to evaluate against
+   * @return true if the condition is satisfied, false otherwise
+   */
+  boolean evaluate(String actualValue, String compareValue);
 }

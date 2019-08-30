@@ -18,12 +18,12 @@ package io.cdap.plugin;
 
 class PortSpecification {
   private final String name;
-  private final Function function;
+  private final RoutingFunction routingFunction;
   private final String parameter;
 
   PortSpecification(String name, GenericSplitter.Config.FunctionType functionType, String parameter) {
     this.name = name;
-    this.function = fromFunctionType(functionType);
+    this.routingFunction = fromFunctionType(functionType);
     this.parameter = parameter;
   }
 
@@ -31,46 +31,46 @@ class PortSpecification {
     return name;
   }
 
-  Function getFunction() {
-    return function;
+  RoutingFunction getRoutingFunction() {
+    return routingFunction;
   }
 
   String getParameter() {
     return parameter;
   }
 
-  private Function fromFunctionType(GenericSplitter.Config.FunctionType functionType) {
-    Function function;
+  private RoutingFunction fromFunctionType(GenericSplitter.Config.FunctionType functionType) {
+    RoutingFunction routingFunction;
     switch (functionType) {
       case EQUALS:
-        function = new EqualsFunction();
+        routingFunction = new RoutingFunctions.EqualsFunction();
         break;
       case NOT_EQUALS:
-        function = new NotEqualsFunction();
+        routingFunction = new RoutingFunctions.NotEqualsFunction();
         break;
       case CONTAINS:
-        function = new ContainsFunction();
+        routingFunction = new RoutingFunctions.ContainsFunction();
         break;
       case NOT_CONTAINS:
-        function = new NotContainsFunction();
+        routingFunction = new RoutingFunctions.NotContainsFunction();
         break;
       case IN:
-        function = new InFunction();
+        routingFunction = new RoutingFunctions.InFunction();
         break;
       case NOT_IN:
-        function = new NotInFunction();
+        routingFunction = new RoutingFunctions.NotInFunction();
         break;
       default:
-        throw new IllegalArgumentException("Unknown function " + functionType);
+        throw new IllegalArgumentException("Unknown routingFunction " + functionType);
     }
-    return function;
+    return routingFunction;
   }
 
   @Override
   public String toString() {
     return "PortSpecification{" +
       "name='" + name + '\'' +
-      ", function=" + function +
+      ", routingFunction=" + routingFunction +
       ", parameter='" + parameter + '\'' +
       '}';
   }

@@ -108,8 +108,8 @@ public class GenericSplitter extends SplitterTransform<StructuredRecord, Structu
     boolean matched = false;
     for (PortSpecification portSpecification : portSpecifications) {
       String portName = portSpecification.getName();
-      Function function = portSpecification.getFunction();
-      if (function.evaluate(textValue, portSpecification.getParameter())) {
+      RoutingFunction routingFunction = portSpecification.getRoutingFunction();
+      if (routingFunction.evaluate(textValue, portSpecification.getParameter())) {
         matched = true;
         emitter.emit(portName, input);
       }
