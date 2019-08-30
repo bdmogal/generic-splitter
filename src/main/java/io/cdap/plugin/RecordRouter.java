@@ -70,20 +70,6 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
     configurer.getMultiOutputStageConfigurer().setOutputSchemas(schemas);
   }
 
-  private Map<String, Schema> generateSchemas(Schema inputSchema) {
-    Map<String, Schema> schemas = new HashMap<>();
-    portSpecifications = config.getPortConfigs();
-    // Add all ports from the port config to the schemas
-    for (PortSpecification portSpecification : portSpecifications) {
-      schemas.put(portSpecification.getName(), inputSchema);
-    }
-    // If mismatched records need to be sent to their own port, add that port to the schemas
-    if (Config.MismatchHandling.MISMATCH_PORT == config.getMismatchHandling()) {
-      schemas.put(config.mismatchPort, inputSchema);
-    }
-    return schemas;
-  }
-
   @Override
   public void initialize(TransformContext context) throws Exception {
     super.initialize(context);
@@ -100,8 +86,8 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
     Object value = input.get(config.fieldToSplitOn);
     // TODO: Handle null values
     /*if (value == null) {
-      LOG.trace("Found null value for {}. Emitting to {} port.", config.fieldToSplitOn, config.mismatchHandling);
-      emitter.emit(config.mismatchHandling, input);
+      LOG.trace("Found null value for {}. Emitting to {} port.", config.fieldToSplitOn, config.defaultHandling);
+      emitter.emit(config.defaultHandling, input);
       return;
     }*/
     String textValue = String.valueOf(value);
@@ -115,18 +101,33 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
       }
     }
     if (!matched) {
-      if (Config.MismatchHandling.MISMATCH_PORT == config.getMismatchHandling()) {
-        emitter.emit(config.mismatchPort, input);
-      } else if (Config.MismatchHandling.ERROR_PORT == config.getMismatchHandling()) {
+      if (Config.DefaultHandling.DEFAULT_PORT == config.getDefaultHandling()) {
+        emitter.emit(config.defaultPort, input);
+      } else if (Config.DefaultHandling.ERROR_PORT == config.getDefaultHandling()) {
         String error = String.format(
           "Record contained unknown value '%s' for field %s", textValue, config.fieldToSplitOn
         );
         InvalidEntry<StructuredRecord> invalid = new InvalidEntry<>(1, error, input);
         emitter.emitError(invalid);
-      } else if (Config.MismatchHandling.SKIP == config.getMismatchHandling()) {
-        LOG.trace("Skipping record because value {} for field {} did not match any rule in the port specification");
+      } else if (Config.DefaultHandling.SKIP == config.getDefaultHandling()) {
+        LOG.trace("Skipping record because value {} for field {} did not match any rule in the port specification",
+                  value, config.fieldToSplitOn);
       }
     }
+  }
+
+  private Map<String, Schema> generateSchemas(Schema inputSchema) {
+    Map<String, Schema> schemas = new HashMap<>();
+    portSpecifications = config.getPortConfigs();
+    // Add all ports from the port config to the schemas
+    for (PortSpecification portSpecification : portSpecifications) {
+      schemas.put(portSpecification.getName(), inputSchema);
+    }
+    // If defaulting records need to be sent to their own port, add that port to the schemas
+    if (Config.DefaultHandling.DEFAULT_PORT == config.getDefaultHandling()) {
+      schemas.put(config.defaultPort, inputSchema);
+    }
+    return schemas;
   }
 
   /**
@@ -154,25 +155,25 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
     @Macro
     private final String portSpecification;
 
-    @Name("mismatchHandling")
+    @Name("defaultHandling")
     @Description("Determines the way to handle records whose value for the field to match on doesn't match an of the " +
-      "rules defined in the port configuration. Mismatched records can either be skipped, sent to a specific port  " +
-      "(in this case the mismatch port should be specified), or sent to an error port. By default, mismatched " +
+      "rules defined in the port configuration. Defaulting records can either be skipped, sent to a specific port  " +
+      "(in which case the default port should be specified), or sent to an error port. By default, defaulting " +
       "records are skipped.")
     @Nullable
-    private final String mismatchHandling;
+    private final String defaultHandling;
 
-    @Name("mismatchPort")
+    @Name("defaultPort")
     @Description("Determines the port to which records that do not match any of the rules in the port specification " +
-      "are routed. This is only used if mismatch handling is set to port, and defaults to 'Other'.")
+      "are routed. This is only used if default handling is set to port, and defaults to 'Other'.")
     @Nullable
-    private final String mismatchPort;
+    private final String defaultPort;
 
-    Config(String fieldToSplitOn, String portSpecification, @Nullable String mismatchHandling, @Nullable String mismatchPort) {
+    Config(String fieldToSplitOn, String portSpecification, @Nullable String defaultHandling, @Nullable String defaultPort) {
       this.fieldToSplitOn = fieldToSplitOn;
       this.portSpecification = portSpecification;
-      this.mismatchHandling = mismatchHandling == null ? "Skip" : mismatchHandling;
-      this.mismatchPort = mismatchPort == null ? "Other" : mismatchPort;
+      this.defaultHandling = defaultHandling == null ? "Skip" : defaultHandling;
+      this.defaultPort = defaultPort == null ? "Other" : defaultPort;
     }
 
     private void validate(Schema inputSchema) throws IllegalArgumentException {
@@ -255,10 +256,10 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
       return portSpecifications;
     }
 
-    MismatchHandling getMismatchHandling() {
-      return MismatchHandling.fromValue(mismatchHandling)
-        .orElseThrow(() -> new InvalidConfigPropertyException("Unsupported mismatch handling value: "
-                                                                + mismatchHandling, "mismatchHandling"));
+    DefaultHandling getDefaultHandling() {
+      return DefaultHandling.fromValue(defaultHandling)
+        .orElseThrow(() -> new InvalidConfigPropertyException("Unsupported default handling value: "
+                                                                + defaultHandling, "defaultHandling"));
     }
 
     enum FunctionType {
@@ -270,14 +271,14 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
       NOT_IN
     }
 
-    enum MismatchHandling {
+    enum DefaultHandling {
       SKIP("Skip"),
       ERROR_PORT("Send to error port"),
-      MISMATCH_PORT("Send to mismatch port");
+      DEFAULT_PORT("Send to default port");
 
       private final String value;
 
-      MismatchHandling(String value) {
+      DefaultHandling(String value) {
         this.value = value;
       }
 
@@ -286,17 +287,16 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
       }
 
       /**
-       * Converts mismatch handling string value into {@link MismatchHandling} enum.
+       * Converts default handling string value into {@link DefaultHandling} enum.
        *
-       * @param mismatchValue mismatch handling string value
-       * @return mismatch handling type in optional container
+       * @param defaultValue default handling string value
+       * @return default handling type in optional container
        */
-      public static Optional<MismatchHandling> fromValue(String mismatchValue) {
+      public static Optional<DefaultHandling> fromValue(String defaultValue) {
         return Stream.of(values())
-          .filter(keyType -> keyType.value.equalsIgnoreCase(mismatchValue))
+          .filter(keyType -> keyType.value.equalsIgnoreCase(defaultValue))
           .findAny();
       }
-
     }
   }
 }
