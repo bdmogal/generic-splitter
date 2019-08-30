@@ -54,8 +54,8 @@
       "properties": [
         {
           "widget-type": "select",
-          "label": "Mismatch handling",
-          "name": "mismatchHandling",
+          "label": "Default handling",
+          "name": "defaultHandling",
           "widget-attributes": {
             "values": [
               "Skip",
@@ -67,8 +67,26 @@
         },
         {
           "widget-type": "textbox",
-          "label": "Mismatch Port",
-          "name": "mismatchPort"
+          "label": "Default Port",
+          "name": "defaultPort"
+        },
+        {
+          "widget-type": "select",
+          "label": "Null handling",
+          "name": "nullHandling",
+          "widget-attributes": {
+            "values": [
+              "Skip",
+              "Send to error port",
+              "Send to mismatch port"
+            ],
+            "default": "Skip"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Null Port",
+          "name": "nullPort"
         }
       ]
     }
