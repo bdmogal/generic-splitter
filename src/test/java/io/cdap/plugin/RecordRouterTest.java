@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 /**
  * This is an example of how you can build unit tests for your transform.
  */
-public class GenericSplitterTest {
+public class RecordRouterTest {
   private static final Schema INPUT =
     Schema.recordOf("input",
                     Schema.Field.of("splitField", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
@@ -58,9 +58,9 @@ public class GenericSplitterTest {
   }
 
   private void testMismatchedRecord(String mismatchHandling, @Nullable String mismatchPortName) throws Exception {
-    GenericSplitter.Config config = new GenericSplitter.Config("splitField",  INPUT.toString(),
-                                                               mismatchHandling, mismatchPortName);
-    SplitterTransform<StructuredRecord, StructuredRecord> transform = new GenericSplitter(config);
+    RecordRouter.Config config = new RecordRouter.Config("splitField", INPUT.toString(),
+                                                         mismatchHandling, mismatchPortName);
+    SplitterTransform<StructuredRecord, StructuredRecord> transform = new RecordRouter(config);
     transform.initialize(null);
 
     MockMultiOutputEmitter<StructuredRecord> emitter = new MockMultiOutputEmitter<>();

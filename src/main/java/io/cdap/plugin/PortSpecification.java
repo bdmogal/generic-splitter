@@ -21,7 +21,7 @@ class PortSpecification {
   private final RoutingFunction routingFunction;
   private final String parameter;
 
-  PortSpecification(String name, GenericSplitter.Config.FunctionType functionType, String parameter) {
+  PortSpecification(String name, RecordRouter.Config.FunctionType functionType, String parameter) {
     this.name = name;
     this.routingFunction = fromFunctionType(functionType);
     this.parameter = parameter;
@@ -39,7 +39,7 @@ class PortSpecification {
     return parameter;
   }
 
-  private RoutingFunction fromFunctionType(GenericSplitter.Config.FunctionType functionType) {
+  private RoutingFunction fromFunctionType(RecordRouter.Config.FunctionType functionType) {
     RoutingFunction routingFunction;
     switch (functionType) {
       case EQUALS:

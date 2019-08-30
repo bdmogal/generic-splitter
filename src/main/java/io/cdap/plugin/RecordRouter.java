@@ -48,16 +48,16 @@ import javax.annotation.Nullable;
  *
  */
 @Plugin(type = SplitterTransform.PLUGIN_TYPE)
-@Name("GenericSplitter")
+@Name("RecordRouter")
 @Description("This is an generic splitter transform, which sends a record to an appropriate branch based on the " +
   "evaluation of a simple function on the value of one of its fields.")
-public class GenericSplitter extends SplitterTransform<StructuredRecord, StructuredRecord> {
-  private static final Logger LOG = LoggerFactory.getLogger(GenericSplitter.class);
+public class RecordRouter extends SplitterTransform<StructuredRecord, StructuredRecord> {
+  private static final Logger LOG = LoggerFactory.getLogger(RecordRouter.class);
 
   private final Config config;
   private List<PortSpecification> portSpecifications;
 
-  GenericSplitter(Config config) {
+  RecordRouter(Config config) {
     this.config = config;
   }
 
