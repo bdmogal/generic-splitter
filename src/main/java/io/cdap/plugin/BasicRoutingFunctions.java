@@ -20,14 +20,14 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Class that contains various implementations of {@link RoutingFunction}
+ * Class that contains various implementations of {@link BasicRoutingFunction}
  */
-final class RoutingFunctions {
+final class BasicRoutingFunctions {
 
   /**
    * Routing function based on equality
    */
-  static class EqualsFunction implements RoutingFunction {
+  static class EqualsFunction implements BasicRoutingFunction {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {
@@ -38,7 +38,7 @@ final class RoutingFunctions {
   /**
    * Routing function based on non-equality
    */
-  public static class NotEqualsFunction implements RoutingFunction {
+  public static class NotEqualsFunction implements BasicRoutingFunction {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {
@@ -49,7 +49,7 @@ final class RoutingFunctions {
   /**
    * Routing function based on substrings
    */
-  public static class ContainsFunction implements RoutingFunction {
+  public static class ContainsFunction implements BasicRoutingFunction {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {
@@ -60,7 +60,7 @@ final class RoutingFunctions {
   /**
    * Routing function based on non-substrings
    */
-  public static class NotContainsFunction implements RoutingFunction {
+  public static class NotContainsFunction implements BasicRoutingFunction {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {
@@ -71,7 +71,7 @@ final class RoutingFunctions {
   /**
    * Routing function based on presence in a list of possible values
    */
-  public static class InFunction implements RoutingFunction {
+  public static class InFunction implements BasicRoutingFunction {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {
@@ -83,7 +83,7 @@ final class RoutingFunctions {
   /**
    * Routing function based on absence from a list of possible values
    */
-  public static class NotInFunction implements RoutingFunction {
+  public static class NotInFunction implements BasicRoutingFunction {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {

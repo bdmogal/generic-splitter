@@ -19,7 +19,7 @@ package io.cdap.plugin;
 /**
  * Defines the contract for a routing function, which decides  which port to route a record to
  */
-public interface RoutingFunction {
+public interface BasicRoutingFunction {
   /**
    * Evaluates teh value of a field against an expected value, based on a specified routing function
    *
