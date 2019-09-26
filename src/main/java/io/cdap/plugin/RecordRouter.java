@@ -187,7 +187,9 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
       "the format [port-name]:[jexl-expression]. All the input fields are available as variables in the JEXL " +
       "expression. Additionally, utility methods from common Java classes such as Math, Guava Strings, Apache " +
       "Commons Lang StringUtils, Bytes and Arrays are also available for use in the port specification rules. To " +
-      "avoid conflicts with delimiters, it is recommended to URL-encode the JEXL expressions.")
+      "avoid conflicts with delimiters, it is recommended to URL-encode the JEXL expressions. Some example " +
+      "expressions: PortA:stringutils%3AstartsWith(part_id%2C'a'), PortB:stringutils%3Acontains(supplier%2C'abc'), " +
+      "PortC:math%3Aceil(amount)")
     @Macro
     @Nullable
     private final String jexlPortSpecification;

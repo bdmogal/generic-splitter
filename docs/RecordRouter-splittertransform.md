@@ -37,7 +37,8 @@ field.
 the port in the format [port-name]:[jexl-expression]. All the input fields are available as variables in the JEXL
 expression. Additionally, utility methods from common Java classes such as Math, Guava Strings, Apache Commons Lang
 StringUtils, Bytes and Arrays are also available for use in the port specification rules. To avoid conflicts with
-delimiters, it is recommended to URL-encode the JEXL expressions.
+delimiters, it is recommended to URL-encode the JEXL expressions. Some example expressions:
+stringutils:startsWith(part_id,'a'), stringutils:contains(supplier,'abc'), math:ceil(amount)"
 
 **Default handling**: Determines the way to handle records whose value for the field to match on doesn't match an of
 the rules defined in the port configuration. Defaulting records can either be skipped ("Skip"), sent to a specific port
