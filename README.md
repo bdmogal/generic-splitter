@@ -1,16 +1,16 @@
-# Example Transform
+# Record Router
 
 <img  alt="Cask Market Availability" src="https://cdap-users.herokuapp.com/assets/cm-notavailable.svg"/> <a href="https://cdap-users.herokuapp.com/"><img alt="Join CDAP community" src="https://cdap-users.herokuapp.com/badge.svg?t=1"/></a> ![cdap-transform](https://cdap-users.herokuapp.com/assets/cdap-transform.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Join CDAP community](https://cdap-users.herokuapp.com/badge.svg?t=wrangler)](https://cdap-users.herokuapp.com?t=1)
 
-This is an example plugin for [CDAP Pipelines](https://docs.cask.co/cdap/4.3.1/en/developer-manual/pipelines/index.html). 
+This is a splitter transform plugin for [CDAP Pipelines](https://docs.cask.co/cdap/current/en/developer-manual/pipelines/index.html). 
  
-It is fully free and fully open source under the Apache 2.0 license.
+It is fully open source under the Apache 2.0 license.
 
 ## Documentation
 
-This is a good starting point, but for more information about developing plugins, you can check out the [CDAP Pipelines Docs](https://docs.cask.co/cdap/4.3.1/en/developer-manual/pipelines/developing-plugins/index.html).
+The docs for the plugin can be found at [Record Router](docs/RecordRouter-splittertransform.md).
 
 ## Need Help?
 
@@ -31,13 +31,9 @@ on the product, and should be used for all our design, architecture and technica
 discussions moving forward. This mailing list will also receive all JIRA and GitHub
 notifications.
 
-### IRC Channel
-
-CDAP IRC Channel: #cdap on [irc.freenode.net](http://irc.freenode.net)
-
 ## Build
 
-To build your plugins:
+To build the plugin:
 
     mvn clean package
     
@@ -48,35 +44,13 @@ You can also build without running tests:
 The build will create a .jar and .json file under the ``target`` directory.
 These files can be uploaded to CDAP to deploy your plugins.
 
-## UI Integration
-
-The Cask Hydrator UI displays each plugin property as a simple textbox. To customize how the plugin properties
-are displayed in the UI, you can place a configuration file in the ``widgets`` directory.
-The file must be named following a convention of ``[plugin-name]-[plugin-type].json``.
-
-See [Plugin Widget Configuration](http://docs.cdap.io/cdap/current/en/hydrator-manual/developing-plugins/packaging-plugins.html#plugin-widget-json)
-for details on the configuration file.
-
-The UI will also display a reference doc for your plugin if you place a file in the ``docs`` directory
-that follows the convention of ``[plugin-name]-[plugin-type].md``.
-
-When the build runs, it will scan the ``widgets`` and ``docs`` directories in order to build an appropriately
-formatted .json file under the ``target`` directory. This file is deployed along with your .jar file to add your
-plugins to CDAP.
-
 ## Deployment
 
-You can deploy your plugins using the CDAP CLI:
-
-    > load artifact <target/plugin.jar> config-file <target/plugin.json>
-
-For example, if your artifact is named 'example-plugins-1.0.0':
-
-    > load artifact target/example-plugins-1.0.0.jar config-file target/example-plugins-1.0.0.json
+You can deploy the plugin using the UI, REST API or CLI.
 
 ## License and Trademarks
 
-Copyright © 2015-2016 Cask Data, Inc.
+Copyright © 2019 Cask Data, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 in compliance with the License. You may obtain a copy of the License at
