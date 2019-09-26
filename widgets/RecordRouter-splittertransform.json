@@ -8,6 +8,25 @@
       "label": "Basic",
       "properties": [
         {
+          "widget-type": "radio-group",
+          "label": "Route Specification Mode",
+          "name": "routeSpecificationMode",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "basic",
+            "options": [
+              {
+                "id": "basic",
+                "label": "Basic"
+              },
+              {
+                "id": "jexl",
+                "label": "JEXL"
+              }
+            ]
+          }
+        },
+        {
           "widget-type": "input-field-selector",
           "label": "Routing field",
           "name": "routingField",
@@ -41,6 +60,20 @@
             "required-fields": ["portSpecification"],
             "missing-required-fields-message": "'Port Specification' is required to fetch schema."
           }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Null Port",
+          "name": "nullPort"
+        },
+        {
+          "widget-type": "keyvalue-encoded",
+          "label": "JEXL Port Specification",
+          "name": "jexlPortSpecification",
+          "widget-attributes": {
+            "delimiter": ",",
+            "kv-delimiter": ":"
+          }
         }
       ]
     },
@@ -64,24 +97,36 @@
           "widget-type": "textbox",
           "label": "Default Port",
           "name": "defaultPort"
+        }
+      ]
+    }
+  ],
+  "filters": [
+    {
+      "name": "BasicRouting",
+      "condition": {
+        "expression": "routeSpecificationMode == 'basic'"
+      },
+      "show": [
+        {
+          "name": "routingField"
         },
         {
-          "widget-type": "select",
-          "label": "Null handling",
-          "name": "nullHandling",
-          "widget-attributes": {
-            "values": [
-              "Skip",
-              "Send to error port",
-              "Send to null port"
-            ],
-            "default": "Send to null port"
-          }
+          "name": "portSpecification"
         },
         {
-          "widget-type": "textbox",
-          "label": "Null Port",
           "name": "nullPort"
+        }
+      ]
+    },
+    {
+      "name": "JexlRouting",
+      "condition": {
+        "expression": "routeSpecificationMode == 'jexl'"
+      },
+      "show": [
+        {
+          "name": "jexlPortSpecification"
         }
       ]
     }
