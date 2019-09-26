@@ -19,6 +19,7 @@ package io.cdap.plugin;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.etl.api.FailureCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
@@ -34,17 +35,13 @@ public class BasicPortSpecificationEvaluator implements PortSpecificationEvaluat
 
   private final String routingField;
   private final String nullPort;
-  private List<BasicPortSpecification> portSpecifications;
+  private final List<BasicPortSpecification> portSpecifications;
 
-  BasicPortSpecificationEvaluator(String routingField, String nullPort, String portSpecification) {
+  BasicPortSpecificationEvaluator(String routingField, String nullPort, String portSpecification,
+                                  FailureCollector collector) {
     this.routingField = routingField;
     this.nullPort = nullPort;
-    this.portSpecifications = parse(portSpecification);
-  }
-
-  @Override
-  public void validate() {
-
+    this.portSpecifications = parse(portSpecification, collector);
   }
 
   @Override
@@ -56,52 +53,64 @@ public class BasicPortSpecificationEvaluator implements PortSpecificationEvaluat
     return ports;
   }
 
-  private static List<BasicPortSpecification> parse(String portSpecification) {
+  private static List<BasicPortSpecification> parse(String portSpecification, FailureCollector collector) {
     List<BasicPortSpecification> portSpecifications = new ArrayList<>();
     Set<String> portNames = new HashSet<>();
-    for (String singlePortSpecification : Splitter.on(',').trimResults().split(portSpecification)) {
-      int colonIdx = singlePortSpecification.indexOf(':');
+    for (String singlePortSpec : Splitter.on(',').trimResults().split(portSpecification)) {
+      int colonIdx = singlePortSpec.indexOf(':');
       if (colonIdx < 0) {
-        throw new IllegalArgumentException(String.format(
-          "Could not find ':' separating port name from its selection operation in '%s'.", singlePortSpecification));
+        collector.addFailure(
+          String.format(
+            "Could not find ':' separating port name from its routing specification in '%s'.", singlePortSpec
+          ), "The configuration for each port should contain a port name and its routing specification separated by :"
+        ).withConfigProperty(RecordRouter.Config.BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
       }
-      String portName = singlePortSpecification.substring(0, colonIdx).trim();
+      String portName = singlePortSpec.substring(0, colonIdx).trim();
       if (!portNames.add(portName)) {
-        throw new IllegalArgumentException(String.format(
-          "Cannot create multiple ports with the same name '%s'.", portName));
+        collector.addFailure(
+          String.format("Cannot create multiple ports with the same name '%s'.", portName),
+          "Please specify a unique port name for each specification"
+        ).withConfigProperty(RecordRouter.Config.BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
       }
 
-      String functionAndParameter = singlePortSpecification.substring(colonIdx + 1).trim();
+      String functionAndParameter = singlePortSpec.substring(colonIdx + 1).trim();
       int leftParanIdx = functionAndParameter.indexOf('(');
       if (leftParanIdx < 0) {
-        throw new IllegalArgumentException(String.format(
-          "Could not find '(' in function '%s'. Operations must be specified as function(parameter).",
-          functionAndParameter));
+        collector.addFailure(
+          String.format("Could not find '(' in function '%s'. ", functionAndParameter),
+          "Please specify routing functions as as function(parameter)."
+        ).withConfigProperty(RecordRouter.Config.BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
       }
       String functionStr = functionAndParameter.substring(0, leftParanIdx).trim();
       RecordRouter.Config.FunctionType function;
       try {
         function = RecordRouter.Config.FunctionType.valueOf(functionStr.toUpperCase());
       } catch (IllegalArgumentException e) {
-        throw new IllegalArgumentException(
-          String.format("Invalid function '%s'. Must be one of %s.", functionStr,
-                        Joiner.on(',').join(RecordRouter.Config.FunctionType.values()))
-        );
+        collector.addFailure(
+          String.format("Invalid routing function '%s'.", functionStr),
+          String.format(
+            "A routing function must be  one of %s.", Joiner.on(',').join(RecordRouter.Config.FunctionType.values())
+          )
+        ).withConfigProperty(RecordRouter.Config.BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
+        throw collector.getOrThrowException();
       }
 
       if (!functionAndParameter.endsWith(")")) {
-        throw new IllegalArgumentException(String.format(
-          "Could not find closing ')' in function '%s'. Functions must be specified as function(parameter).",
-          functionAndParameter));
+        collector.addFailure(
+          String.format("Could not find closing ')' in function '%s'.", functionAndParameter),
+          "Functions must be specified as function(parameter)"
+        ).withConfigProperty(RecordRouter.Config.BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
       }
       String parameter = functionAndParameter.substring(leftParanIdx + 1, functionAndParameter.length() - 1).trim();
       if (parameter.isEmpty()) {
-        throw new IllegalArgumentException(String.format(
-          "Invalid function '%s'. A parameter must be given as an argument.", functionAndParameter));
+        collector.addFailure(
+          String.format("Invalid function '%s'.", functionAndParameter),
+          "A parameter must be provided as an argument."
+        ).withConfigProperty(RecordRouter.Config.BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
       }
 
       LOG.debug("Adding port config: name = {}; function = {}; parameter = {}", portName, function, parameter);
-      portSpecifications.add(new BasicPortSpecification(portName, function, parameter));
+      portSpecifications.add(new BasicPortSpecification(portName, function, parameter, collector));
     }
 
     if (portSpecifications.isEmpty()) {

@@ -25,10 +25,6 @@ import javax.annotation.Nullable;
  * determines the port to which a record should be routed based on the port specification.
  */
 public interface PortSpecificationEvaluator {
-  /**
-   * Validate the port specification string supplied by a user
-   */
-  void validate();
 
   /**
    * Returns the names of all the ports in the port specification

@@ -19,6 +19,7 @@ package io.cdap.plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.etl.api.SplitterTransform;
 import io.cdap.cdap.etl.mock.common.MockMultiOutputEmitter;
+import io.cdap.cdap.etl.mock.transform.MockTransformContext;
 import org.junit.Assert;
 import org.junit.Test;
 import java.util.List;
@@ -99,7 +100,7 @@ public class BasicRecordRouterTest extends RecordRouterTest {
     RecordRouter.Config config = new RecordRouter.Config(getMode(), "supplier_id", PORT_SPECIFICATION, "port:1==1",
                                                          null, null, outputPortName);
     SplitterTransform<StructuredRecord, StructuredRecord> recordRouter = new RecordRouter(config);
-    recordRouter.initialize(null);
+    recordRouter.initialize(new MockTransformContext());
 
     MockMultiOutputEmitter<StructuredRecord> emitter = new MockMultiOutputEmitter<>();
     recordRouter.transform(testRecord, emitter);
@@ -122,7 +123,7 @@ public class BasicRecordRouterTest extends RecordRouterTest {
       getMode(), "supplier_id", portSpecification, "port:1==1", null, null, null
     );
     SplitterTransform<StructuredRecord, StructuredRecord> recordRouter = new RecordRouter(config);
-    recordRouter.initialize(null);
+    recordRouter.initialize(new MockTransformContext());
 
     MockMultiOutputEmitter<StructuredRecord> emitter = new MockMultiOutputEmitter<>();
     recordRouter.transform(testRecord, emitter);

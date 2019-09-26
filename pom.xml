@@ -23,12 +23,15 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Generic Splitter</name>
+  <name>Record Router</name>
+  <description>
+    A splitter transform plugin that can route records to the appropriate port based on certain conditions.
+  </description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <cdap.version>6.0.0</cdap.version>
-    <cdap.plugin.version>2.2.0</cdap.plugin.version>
+    <cdap.version>6.1.0-SNAPSHOT</cdap.version>
+    <cdap.plugin.version>2.3.0-SNAPSHOT</cdap.plugin.version>
     <!-- This is the version range for the app.parents that this plugin is valid for. Usually this will correspond with
          the CDAP version, but not always. -->
     <etl.versionRange>[6.0.0,10.0.0-SNAPSHOT)</etl.versionRange>

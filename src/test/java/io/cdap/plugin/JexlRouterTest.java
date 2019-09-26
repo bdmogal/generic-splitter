@@ -19,6 +19,7 @@ package io.cdap.plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.etl.api.SplitterTransform;
 import io.cdap.cdap.etl.mock.common.MockMultiOutputEmitter;
+import io.cdap.cdap.etl.mock.transform.MockTransformContext;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class JexlRouterTest extends RecordRouterTest {
     String jexlPortSpec = "A:stringutils%3AstartsWith(part_id%2C'a'),B:stringutils%3AstartsWith(part_id%2C'b')";
     RecordRouter.Config config = new RecordRouter.Config(getMode(), null, null, jexlPortSpec, null, null, null);
     SplitterTransform<StructuredRecord, StructuredRecord> recordRouter = new RecordRouter(config);
-    recordRouter.initialize(null);
+    recordRouter.initialize(new MockTransformContext());
 
     MockMultiOutputEmitter<StructuredRecord> emitter = new MockMultiOutputEmitter<>();
     recordRouter.transform(inputRecord1, emitter);

@@ -22,6 +22,7 @@ import com.google.common.base.Strings;
 import io.cdap.cdap.api.common.Bytes;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlEngine;
@@ -52,8 +53,9 @@ public final class JexlSpecificationEvaluator implements PortSpecificationEvalua
 
   private final List<JexlPortSpecification> portSpecifications;
   private final JexlContext context;
+  private final FailureCollector collector;
 
-  JexlSpecificationEvaluator(String portSpecification) {
+  JexlSpecificationEvaluator(String portSpecification, FailureCollector collector) {
     JexlEngine engine = new JexlBuilder()
       .namespaces(NAMESPACES)
       .silent(false)
@@ -61,12 +63,8 @@ public final class JexlSpecificationEvaluator implements PortSpecificationEvalua
       .strict(true)
       .create();
     this.context = new MapContext();
-    this.portSpecifications = parse(portSpecification, engine);
-  }
-
-  @Override
-  public void validate() {
-
+    this.collector = collector;
+    this.portSpecifications = parse(portSpecification, engine, collector);
   }
 
   @Override
@@ -82,7 +80,8 @@ public final class JexlSpecificationEvaluator implements PortSpecificationEvalua
   public String getPort(StructuredRecord record) {
     List<Schema.Field> fields = record.getSchema().getFields();
     if (fields == null) {
-      throw new IllegalArgumentException("fields can't be null");
+      collector.addFailure("Input fields must be provided", null);
+      throw collector.getOrThrowException();
     }
     for (Schema.Field field : fields) {
       String variableName = field.getName();
@@ -91,10 +90,11 @@ public final class JexlSpecificationEvaluator implements PortSpecificationEvalua
     for (JexlPortSpecification portSpecification : portSpecifications) {
       Object result = portSpecification.getJexlScript().execute(context);
       if (!(result instanceof Boolean)) {
-        throw new IllegalArgumentException(
-          String.format("Illegal JEXL expression %s. Please make sure that the expression returns a boolean value.",
-                        portSpecification.getJexlScript().getSourceText())
-        );
+        collector.addFailure(
+          String.format("Invalid Jexl expression %s.", portSpecification.getJexlScript().getSourceText()),
+          "Please make sure that the expression returns a boolean value."
+        ).withConfigProperty(RecordRouter.Config.JEXL_PORT_SPECIFICATION_PROPERTY_NAME);
+        throw collector.getOrThrowException();
       }
       Boolean selectPort = (Boolean) result;
       if (selectPort) {
@@ -104,30 +104,36 @@ public final class JexlSpecificationEvaluator implements PortSpecificationEvalua
     return null;
   }
 
-  private static List<JexlPortSpecification> parse(String portSpecification, JexlEngine engine) {
+  private List<JexlPortSpecification> parse(String portSpecification, JexlEngine engine, FailureCollector collector) {
     List<JexlPortSpecification> portSpecifications = new ArrayList<>();
     Set<String> portNames = new HashSet<>();
-    for (String singlePortSpecification : Splitter.on(',').trimResults().split(portSpecification)) {
-      int colonIdx = singlePortSpecification.indexOf(':');
+    for (String singlePortSpec : Splitter.on(',').trimResults().split(portSpecification)) {
+      int colonIdx = singlePortSpec.indexOf(':');
       if (colonIdx < 0) {
-        throw new IllegalArgumentException(String.format(
-          "Could not find ':' separating port name from its selection operation in '%s'.", singlePortSpecification));
+        collector.addFailure(
+          String.format(
+            "Could not find ':' separating port name from its Jexl routing expression in '%s'.", singlePortSpec
+          ), "The configuration for each port should contain a port name and its Jexl routing expression separated " +
+            "by :"
+        ).withConfigProperty(RecordRouter.Config.JEXL_PORT_SPECIFICATION_PROPERTY_NAME);
       }
       String portName;
       try {
-        portName = URLDecoder.decode(singlePortSpecification.substring(0, colonIdx).trim(), Charsets.UTF_8.name());
+        portName = URLDecoder.decode(singlePortSpec.substring(0, colonIdx).trim(), Charsets.UTF_8.name());
       } catch (UnsupportedEncodingException e) {
         // This should never happen
         throw new IllegalStateException("Unsupported encoding when trying to decode port name.", e);
       }
       if (!portNames.add(portName)) {
-        throw new IllegalArgumentException(String.format(
-          "Cannot create multiple ports with the same name '%s'.", portName));
+        collector.addFailure(
+          String.format("Cannot create multiple ports with the same name '%s'.", portName),
+          "Please specify a unique port name for each specification"
+        ).withConfigProperty(RecordRouter.Config.JEXL_PORT_SPECIFICATION_PROPERTY_NAME);
       }
 
       String expression;
       try {
-        expression = URLDecoder.decode(singlePortSpecification.substring(colonIdx + 1).trim(), Charsets.UTF_8.name());
+        expression = URLDecoder.decode(singlePortSpec.substring(colonIdx + 1).trim(), Charsets.UTF_8.name());
       } catch (UnsupportedEncodingException e) {
         // This should never happen
         throw new IllegalStateException("Unsupported encoding when trying to decode port name.", e);
@@ -136,7 +142,8 @@ public final class JexlSpecificationEvaluator implements PortSpecificationEvalua
     }
 
     if (portSpecifications.isEmpty()) {
-      throw new IllegalArgumentException("The 'portSpecifications' property must be set.");
+      collector.addFailure("At least 1 port specification must be provided.", null)
+        .withConfigProperty(RecordRouter.Config.JEXL_PORT_SPECIFICATION_PROPERTY_NAME);
     }
     return portSpecifications;
   }

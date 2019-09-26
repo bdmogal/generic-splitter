@@ -16,14 +16,20 @@
 
 package io.cdap.plugin;
 
+import com.google.common.base.Joiner;
+import io.cdap.cdap.etl.api.FailureCollector;
+
 class BasicPortSpecification extends PortSpecification {
   private final BasicRoutingFunction routingFunction;
   private final String parameter;
+  private final FailureCollector collector;
 
-  BasicPortSpecification(String name, RecordRouter.Config.FunctionType functionType, String parameter) {
+  BasicPortSpecification(String name, RecordRouter.Config.FunctionType functionType, String parameter,
+                         FailureCollector collector) {
     super(name);
     this.routingFunction = fromFunctionType(functionType);
     this.parameter = parameter;
+    this.collector = collector;
   }
 
   BasicRoutingFunction getRoutingFunction() {
@@ -62,7 +68,11 @@ class BasicPortSpecification extends PortSpecification {
         routingFunction = new BasicRoutingFunctions.NotMatchesFunction();
         break;
       default:
-        throw new IllegalArgumentException("Unknown routingFunction " + functionType);
+        collector.addFailure(
+          "Unknown routingFunction " + functionType,
+          "Routing function must be one of " + Joiner.on(",").join(RecordRouter.Config.FunctionType.values())
+        ).withConfigProperty(RecordRouter.Config.BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
+        throw collector.getOrThrowException();
     }
     return routingFunction;
   }

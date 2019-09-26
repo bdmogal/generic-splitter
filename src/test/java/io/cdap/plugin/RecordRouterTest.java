@@ -21,6 +21,7 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.InvalidEntry;
 import io.cdap.cdap.etl.api.SplitterTransform;
 import io.cdap.cdap.etl.mock.common.MockMultiOutputEmitter;
+import io.cdap.cdap.etl.mock.transform.MockTransformContext;
 import org.junit.Assert;
 import org.junit.Test;
 import java.util.List;
@@ -88,7 +89,7 @@ public abstract class RecordRouterTest {
     RecordRouter.Config config = new RecordRouter.Config("basic", "supplier_id", portSpecification, "a=b",
                                                          "Send to default port", "Default Port", "Null Port");
     SplitterTransform<StructuredRecord, StructuredRecord> recordRouter = new RecordRouter(config);
-    recordRouter.initialize(null);
+    recordRouter.initialize(new MockTransformContext());
 
     MockMultiOutputEmitter<StructuredRecord> emitter = new MockMultiOutputEmitter<>();
 
@@ -115,7 +116,7 @@ public abstract class RecordRouterTest {
     RecordRouter.Config config = new RecordRouter.Config("basic", "supplier_id", PORT_SPECIFICATION, "a=b",
                                                          defaultHandling, outputPortName, null);
     SplitterTransform<StructuredRecord, StructuredRecord> recordRouter = new RecordRouter(config);
-    recordRouter.initialize(null);
+    recordRouter.initialize(new MockTransformContext());
 
     MockMultiOutputEmitter<StructuredRecord> emitter = new MockMultiOutputEmitter<>();
     recordRouter.transform(testRecord, emitter);
