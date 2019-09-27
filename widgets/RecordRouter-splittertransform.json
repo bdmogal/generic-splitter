@@ -72,7 +72,9 @@
           "name": "jexlPortSpecification",
           "widget-attributes": {
             "delimiter": ",",
-            "kv-delimiter": ":"
+            "kv-delimiter": ":",
+            "key-placeholder": "Port Name",
+            "value-placeholder": "Jexl Expression"
           }
         }
       ]
