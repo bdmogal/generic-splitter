@@ -221,7 +221,7 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
       this.routingField = routingField;
       this.jexlPortSpecification = jexlPortSpecification;
       this.portSpecification = portSpecification;
-      this.defaultHandling = defaultHandling == null ? DefaultHandling.DEFAULT_PORT.name() : defaultHandling;
+      this.defaultHandling = defaultHandling == null ? DefaultHandling.DEFAULT_PORT.value : defaultHandling;
       this.defaultPort = defaultPort == null ? DEFAULT_PORT_NAME : defaultPort;
       this.nullPort = nullPort == null ? DEFAULT_NULL_PORT_NAME : nullPort;
     }
@@ -261,7 +261,9 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
       CONTAINS,
       NOT_CONTAINS,
       IN,
-      NOT_IN
+      NOT_IN,
+      MATCHES,
+      NOT_MATCHES
     }
 
     enum DefaultHandling {

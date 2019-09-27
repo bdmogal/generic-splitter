@@ -53,7 +53,7 @@ final class BasicRoutingFunctions {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {
-      return compareValue.contains(actualValue);
+      return actualValue.contains(compareValue);
     }
   }
 
@@ -64,7 +64,7 @@ final class BasicRoutingFunctions {
 
     @Override
     public boolean evaluate(String actualValue, String compareValue) {
-      return !compareValue.contains(actualValue);
+      return !actualValue.contains(compareValue);
     }
   }
 
@@ -89,6 +89,28 @@ final class BasicRoutingFunctions {
     public boolean evaluate(String actualValue, String compareValue) {
       List<String> possibleValues = Arrays.asList(compareValue.split("\\|"));
       return !possibleValues.contains(actualValue);
+    }
+  }
+
+  /**
+   * Routing function based on matching against a regular expression
+   */
+  public static class MatchesFunction implements BasicRoutingFunction {
+
+    @Override
+    public boolean evaluate(String actualValue, String compareValue) {
+      return actualValue.matches(compareValue);
+    }
+  }
+
+  /**
+   * Routing function based on not matching a regular expression
+   */
+  public static class NotMatchesFunction implements BasicRoutingFunction {
+
+    @Override
+    public boolean evaluate(String actualValue, String compareValue) {
+      return !actualValue.matches(compareValue);
     }
   }
 }

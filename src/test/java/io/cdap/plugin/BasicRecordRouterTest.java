@@ -46,6 +46,47 @@ public class BasicRecordRouterTest extends RecordRouterTest {
     testNullRecordToNullPort(null);
   }
 
+  @Test
+  public void testEqualsFunction() throws Exception {
+    testBasicFunction("portA", "portB", "portA:equals(supplierA),portB:equals(supplierB)");
+  }
+
+  @Test
+  public void testNotEqualsFunction() throws Exception {
+    testBasicFunction("portB", "portA", "portA:not_equals(supplierA),portB:not_equals(supplierB)");
+  }
+
+  @Test
+  public void testContainsFunction() throws Exception {
+    testBasicFunction("portA", "portB", "portA:contains(plier),portB:contains(flier)");
+  }
+
+  @Test
+  public void testNotContainsFunction() throws Exception {
+    testBasicFunction("portB", "portA", "portA:not_contains(plier),portB:not_contains(flier)");
+  }
+
+  @Test
+  public void testInFunction() throws Exception {
+    testBasicFunction("portA", "portB", "portA:in(supplierA|supplierB),portB:in(suppA|suppB)");
+  }
+
+  @Test
+  public void testNotInFunction() throws Exception {
+    testBasicFunction("portB", "portA", "portA:not_in(supplierA|supplierB),portB:not_in(s|suppB)");
+  }
+
+  @Test
+  public void testMatchesFunction() throws Exception {
+    testBasicFunction("portA", "portA:matches(.*plierA$),portB:matches(.*flierA$)", "porB");
+  }
+
+  @Test
+  public void testNotMatchesFunction() throws Exception {
+    testBasicFunction("portB", "portA", "portA:not_matches(.*plierA$),portB:not_matches(.*xyz$)");
+
+  }
+
   private void testNullRecordToNullPort(@Nullable String nullPortName) throws Exception {
     testNullRecord(nullPortName);
   }
@@ -71,5 +112,28 @@ public class BasicRecordRouterTest extends RecordRouterTest {
     Assert.assertNull(record.get("supplier_id"));
     Assert.assertEquals("2", record.get("part_id"));
     Assert.assertEquals("3", record.get("count"));
+  }
+
+  private void testBasicFunction(String portToRouteTo, String portToNotRouteTo, String portSpecification) throws Exception {
+    StructuredRecord testRecord = StructuredRecord.builder(INPUT)
+      .set("supplier_id", "supplierA")
+      .set("part_id", "2")
+      .set("count", "3")
+      .build();
+
+    RecordRouter.Config config = new RecordRouter.Config(
+      getMode(), "supplier_id", portSpecification, "port:1==1", null, null, null
+    );
+    SplitterTransform<StructuredRecord, StructuredRecord> recordRouter = new RecordRouter(config);
+    recordRouter.initialize(null);
+
+    MockMultiOutputEmitter<StructuredRecord> emitter = new MockMultiOutputEmitter<>();
+    recordRouter.transform(testRecord, emitter);
+
+    List<Object> objects = emitter.getEmitted().get(portToRouteTo);
+    StructuredRecord record = (StructuredRecord) objects.get(0);
+    Assert.assertEquals(testRecord, record);
+    objects = emitter.getEmitted().get(portToNotRouteTo);
+    Assert.assertNull(objects);
   }
 }

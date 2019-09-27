@@ -55,6 +55,12 @@ class BasicPortSpecification extends PortSpecification {
       case NOT_IN:
         routingFunction = new BasicRoutingFunctions.NotInFunction();
         break;
+      case MATCHES:
+        routingFunction = new BasicRoutingFunctions.MatchesFunction();
+        break;
+      case NOT_MATCHES:
+        routingFunction = new BasicRoutingFunctions.NotMatchesFunction();
+        break;
       default:
         throw new IllegalArgumentException("Unknown routingFunction " + functionType);
     }
