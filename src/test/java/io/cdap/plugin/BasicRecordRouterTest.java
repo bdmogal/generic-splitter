@@ -78,7 +78,7 @@ public class BasicRecordRouterTest extends RecordRouterTest {
 
   @Test
   public void testMatchesFunction() throws Exception {
-    testBasicFunction("portA", "portA:matches(.*plierA$),portB:matches(.*flierA$)", "porB");
+    testBasicFunction("portA", "portB", "portA:matches(.*plierA$),portB:matches(.*flierA$)");
   }
 
   @Test
@@ -109,9 +109,7 @@ public class BasicRecordRouterTest extends RecordRouterTest {
     List<Object> objects = emitter.getEmitted().get(outputPortName);
     StructuredRecord record = (StructuredRecord) objects.get(0);
 
-    Assert.assertNull(record.get("supplier_id"));
-    Assert.assertEquals("2", record.get("part_id"));
-    Assert.assertEquals("3", record.get("count"));
+    Assert.assertEquals(testRecord, record);
   }
 
   private void testBasicFunction(String portToRouteTo, String portToNotRouteTo, String portSpecification) throws Exception {

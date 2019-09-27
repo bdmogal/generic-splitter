@@ -133,8 +133,6 @@ public abstract class RecordRouterTest {
       }
       record = (StructuredRecord) objects.get(0);
     }
-    Assert.assertEquals("1", record.get("supplier_id"));
-    Assert.assertEquals("2", record.get("part_id"));
-    Assert.assertEquals("3", record.get("count"));
+    Assert.assertEquals(testRecord, record);
   }
 }
