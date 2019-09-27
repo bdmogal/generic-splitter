@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Join CDAP community](https://cdap-users.herokuapp.com/badge.svg?t=wrangler)](https://cdap-users.herokuapp.com?t=1)
 
-This is a splitter transform plugin for [CDAP Pipelines](https://docs.cask.co/cdap/current/en/developer-manual/pipelines/index.html). 
+This is a splitter transform plugin for [CDAP Pipelines](https://docs.cask.co/cdap/current/en/developer-manual/pipelines/index.html), that can help you route records to a given output port, based on predefined rules.
  
 It is fully open source under the Apache 2.0 license.
 
