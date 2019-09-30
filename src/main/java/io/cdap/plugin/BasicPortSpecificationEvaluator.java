@@ -27,6 +27,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * A {@link PortSpecificationEvaluator} that evaluates port specifications in the basic routing mode
+ */
 public class BasicPortSpecificationEvaluator implements PortSpecificationEvaluator {
   private static final Logger LOG = LoggerFactory.getLogger(BasicPortSpecification.class);
 
@@ -81,8 +84,10 @@ public class BasicPortSpecificationEvaluator implements PortSpecificationEvaluat
       try {
         function = RecordRouter.Config.FunctionType.valueOf(functionStr.toUpperCase());
       } catch (IllegalArgumentException e) {
-        throw new IllegalArgumentException(String.format(
-          "Invalid function '%s'. Must be one of %s.", functionStr, Joiner.on(',').join(RecordRouter.Config.FunctionType.values())));
+        throw new IllegalArgumentException(
+          String.format("Invalid function '%s'. Must be one of %s.", functionStr,
+                        Joiner.on(',').join(RecordRouter.Config.FunctionType.values()))
+        );
       }
 
       if (!functionAndParameter.endsWith(")")) {

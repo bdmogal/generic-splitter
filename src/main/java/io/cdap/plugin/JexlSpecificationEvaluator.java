@@ -38,6 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A {@link PortSpecificationEvaluator} that evaluates port specifications in the jexl routing mode
+ */
 public final class JexlSpecificationEvaluator implements PortSpecificationEvaluator {
   private static final Map<String, Object> NAMESPACES = new HashMap<>();
   static {

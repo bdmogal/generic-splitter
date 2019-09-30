@@ -112,7 +112,8 @@ public class BasicRecordRouterTest extends RecordRouterTest {
     Assert.assertEquals(testRecord, record);
   }
 
-  private void testBasicFunction(String portToRouteTo, String portToNotRouteTo, String portSpecification) throws Exception {
+  private void testBasicFunction(String portToRouteTo, String portToNotRouteTo,
+                                 String portSpecification) throws Exception {
     StructuredRecord testRecord = StructuredRecord.builder(INPUT)
       .set("supplier_id", "supplierA")
       .set("part_id", "2")
