@@ -21,7 +21,6 @@ import io.cdap.cdap.etl.api.SplitterTransform;
 import io.cdap.cdap.etl.mock.common.MockMultiOutputEmitter;
 import org.junit.Assert;
 import org.junit.Test;
-
 import java.util.List;
 import javax.annotation.Nullable;
 
@@ -84,7 +83,6 @@ public class BasicRecordRouterTest extends RecordRouterTest {
   @Test
   public void testNotMatchesFunction() throws Exception {
     testBasicFunction("portB", "portA", "portA:not_matches(.*plierA$),portB:not_matches(.*xyz$)");
-
   }
 
   private void testNullRecordToNullPort(@Nullable String nullPortName) throws Exception {

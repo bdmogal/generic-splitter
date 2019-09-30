@@ -23,7 +23,6 @@ import io.cdap.cdap.etl.api.SplitterTransform;
 import io.cdap.cdap.etl.mock.common.MockMultiOutputEmitter;
 import org.junit.Assert;
 import org.junit.Test;
-
 import java.util.List;
 import javax.annotation.Nullable;
 

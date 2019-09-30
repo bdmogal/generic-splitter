@@ -17,7 +17,6 @@
 package io.cdap.plugin;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
-
 import java.util.List;
 import javax.annotation.Nullable;
 
