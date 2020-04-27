@@ -107,6 +107,12 @@ public final class JexlSpecificationEvaluator implements PortSpecificationEvalua
   private List<JexlPortSpecification> parse(String portSpecification, JexlEngine engine, FailureCollector collector) {
     List<JexlPortSpecification> portSpecifications = new ArrayList<>();
     Set<String> portNames = new HashSet<>();
+    if (Strings.isNullOrEmpty(portSpecification)) {
+      collector.addFailure(
+        "Could not find any port specifications.", "At least one port specification must be provided."
+      ).withConfigProperty(RecordRouter.Config.JEXL_PORT_SPECIFICATION_PROPERTY_NAME);
+      throw collector.getOrThrowException();
+    }
     for (String singlePortSpec : Splitter.on(',').trimResults().split(portSpecification)) {
       int colonIdx = singlePortSpec.indexOf(':');
       if (colonIdx < 0) {

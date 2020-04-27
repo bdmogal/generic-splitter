@@ -193,7 +193,7 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
     @Macro
     @Nullable
     private final String portSpecification;
-    
+
     @Name(JEXL_PORT_SPECIFICATION_PROPERTY_NAME)
     @Description("Specifies a '#' separated list of ports, and the JEXL expression to route the record to the port " +
       "in the format [port-name]:[jexl-expression]. All the input fields are available as variables in the JEXL " +
@@ -244,40 +244,40 @@ public class RecordRouter extends SplitterTransform<StructuredRecord, Structured
                              String.format("Please specify one of %s or %s", BASIC_MODE_NAME, JEXL_MODE_NAME))
           .withConfigProperty(ROUTE_SPECIFICATION_MODE_PROPERTY_NAME);
       }
-      if (BASIC_MODE_NAME.equals(routeSpecificationMode)) {
-        if (routingField == null || routingField.isEmpty()) {
-          collector.addFailure("Field to split is required when routing mode is basic.",
-                               "Please provide the field to split on").withConfigProperty(ROUTING_FIELD_PROPERTY_NAME);
-        }
-        Schema.Field field = inputSchema.getField(routingField);
-        if (field == null) {
-          collector.addFailure(String.format("Routing field %s not found in the input schema", routingField),
-                               "Please provide a field that exists in the input schema")
-            .withConfigProperty(ROUTING_FIELD_PROPERTY_NAME);
-          throw collector.getOrThrowException();
-        }
-        Schema fieldSchema = field.getSchema();
-        Schema.Type type = fieldSchema.isNullable() ? fieldSchema.getNonNullable().getType() : fieldSchema.getType();
-        if (!ALLOWED_TYPES.contains(type)) {
-          collector.addFailure(
-            String.format("Field to split must be one of - STRING, INTEGER, LONG, FLOAT, DOUBLE, BOOLEAN. " +
-                            "Found '%s'", fieldSchema), null).withConfigProperty(ROUTING_FIELD_PROPERTY_NAME);
-        }
-        if (portSpecification == null || portSpecification.isEmpty()) {
-          collector.addFailure("No port specifications defined.", "Please provide at least 1 port specification")
-            .withConfigProperty(BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
-        }
-        throw collector.getOrThrowException();
-      }
-      if (Strings.isNullOrEmpty(jexlPortSpecification)) {
-        collector.addFailure("In jexl mode, JEXL port specification must be provided", null)
-          .withConfigProperty(JEXL_PORT_SPECIFICATION_PROPERTY_NAME);
-      }
       Optional<DefaultHandling> handling = DefaultHandling.fromValue(defaultHandling);
       if (!handling.isPresent()) {
         collector.addFailure(String.format("Unsupported default handling value %s", DEFAULT_HANDLING_PROPERTY_NAME),
                              String.format("Please specify one of %s", Joiner.on(",").join(DefaultHandling.values())))
           .withConfigProperty(DEFAULT_HANDLING_PROPERTY_NAME);
+      }
+
+      if (JEXL_MODE_NAME.equals(routeSpecificationMode) && Strings.isNullOrEmpty(jexlPortSpecification)) {
+        collector.addFailure("In jexl mode, Jexl port specification must be provided", null)
+          .withConfigProperty(JEXL_PORT_SPECIFICATION_PROPERTY_NAME);
+        return;
+      }
+
+      if (routingField == null || routingField.isEmpty()) {
+        collector.addFailure("Field to split is required when routing mode is basic.",
+                             "Please provide the field to split on").withConfigProperty(ROUTING_FIELD_PROPERTY_NAME);
+      }
+      Schema.Field field = inputSchema.getField(routingField);
+      if (field == null) {
+        collector.addFailure(String.format("Routing field %s not found in the input schema", routingField),
+                             "Please provide a field that exists in the input schema")
+          .withConfigProperty(ROUTING_FIELD_PROPERTY_NAME);
+        throw collector.getOrThrowException();
+      }
+      Schema fieldSchema = field.getSchema();
+      Schema.Type type = fieldSchema.isNullable() ? fieldSchema.getNonNullable().getType() : fieldSchema.getType();
+      if (!ALLOWED_TYPES.contains(type)) {
+        collector.addFailure(
+          String.format("Field to split must be one of - STRING, INTEGER, LONG, FLOAT, DOUBLE, BOOLEAN. " +
+                          "Found '%s'", fieldSchema), null).withConfigProperty(ROUTING_FIELD_PROPERTY_NAME);
+      }
+      if (portSpecification == null || portSpecification.isEmpty()) {
+        collector.addFailure("No port specifications defined.", "Please provide at least 1 port specification")
+          .withConfigProperty(BASIC_PORT_SPECIFICATION_PROPERTY_NAME);
       }
     }
 
